@@ -95,7 +95,7 @@ csharp_style_prefer_tuple_swap = true:suggestion
 csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
 csharp_style_prefer_utf8_string_literals = true:suggestion
 csharp_style_unused_value_expression_statement_preference = discard_variable:silent
-csharp_style_unused_value_assignment_preference = discard_variable:suggestion
+csharp_style_unused_value_assignment_preference = discard_variable:error
 csharp_style_deconstructed_variable_declaration = true:suggestion
 csharp_style_inlined_variable_declaration = true:suggestion
 csharp_style_prefer_readonly_struct_member = true:suggestion
@@ -140,6 +140,15 @@ dotnet_diagnostic.CA2020.severity = error
 
 # IDE0063: Use simple 'using' statement
 dotnet_diagnostic.IDE0063.severity = error
+
+# IDE0059: Unnecessary assignment of a value
+dotnet_diagnostic.IDE0059.severity = error
+
+# CS0219: Variable is assigned but its value is never used
+dotnet_diagnostic.CS0219.severity = error
+
+# CS0162: Unreachable code detected
+dotnet_diagnostic.CS0162.severity = error
 
 [*.{cs,vb}]
 #### Naming styles ####
@@ -285,7 +294,7 @@ dotnet_style_qualification_for_field = false:silent
 dotnet_diagnostic.CA1501.severity = error
 dotnet_diagnostic.CA1502.severity = error
 dotnet_diagnostic.CA1505.severity = error
-dotnet_diagnostic.CA1506.severity = error
+dotnet_diagnostic.CA1506.severity = none
 dotnet_diagnostic.CA1509.severity = error
 dotnet_diagnostic.CA1510.severity = error
 dotnet_diagnostic.CA1511.severity = error
