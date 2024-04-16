@@ -480,50 +480,26 @@ namespace RemoteDesktopGateway
             }
         }
 
-        private static string AesDecrypt(byte[] cipherText, byte[] key, byte[] iv)
+        private static byte[] AesDecrypt(byte[] cipherText, byte[] key, byte[] iv)
         {
-            string plaintext = null;
-
-            using (var aes = Aes.Create())
-            {
-                aes.Key = key;
-                aes.IV = iv;
-                using MemoryStream msDecrypt = new(cipherText);
-                using CryptoStream csDecrypt = new(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read);
-                using StreamReader srDecrypt = new(csDecrypt);
-                plaintext = srDecrypt.ReadToEnd();
-            }
-
-            return plaintext;
+            using var aes = Aes.Create();
+            aes.Key = key;
+            return aes.DecryptCbc(cipherText, iv);
         }
 
-        private static (byte[] key, byte[] iv) AesEncrypt(string plainText, byte[] key)
+        private static (byte[] cipherText, byte[] iv) AesEncrypt(byte[] plainText, byte[] key)
         {
-            byte[] encrypted;
             using Aes aes = Aes.Create();
             aes.Key = key;
-
-            using MemoryStream msEncrypt = new();
-            using CryptoStream csEncrypt = new(msEncrypt, aes.CreateEncryptor(), CryptoStreamMode.Write);
-            using (StreamWriter swEncrypt = new(csEncrypt))
-            {
-                swEncrypt.Write(plainText);
-            }
-
-            encrypted = msEncrypt.ToArray();
-
-            return (encrypted, aes.IV);
+            return (aes.EncryptCbc(plainText, aes.IV), aes.IV);
         }
 
         private static byte[] GenerateAesKey()
         {
-            byte[] key;
-
             using Aes aes = Aes.Create();
             aes.KeySize = 256;
             aes.GenerateKey();
-            key = aes.Key;
-            return key;
+            return aes.Key;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -733,7 +709,7 @@ namespace RemoteDesktopGateway
                 return;
             }
 
-            (var encryptedBytes, var iv) = AesEncrypt($"{email}:{refreshToken}", key);
+            (var encryptedBytes, var iv) = AesEncrypt(Encoding.UTF8.GetBytes($"{email}:{refreshToken}"), key);
 
             var encryptedRefreshToken = CreateCookieValue(WebEncoders.Base64UrlEncode(iv), Guid.NewGuid().ToString("N"), WebEncoders.Base64UrlEncode(encryptedBytes), signingKey, x, y);
             var cookieOptions = new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict, Expires = DateTimeOffset.Now.AddMonths(serverConfig.CookieExpiryMonths), IsEssential = true };
@@ -829,7 +805,7 @@ namespace RemoteDesktopGateway
             string[] cookieValues;
             try
             {
-                cookieValues = AesDecrypt(eb, key, iv).Split(':');
+                cookieValues = Encoding.UTF8.GetString(AesDecrypt(eb, key, iv)).Split(':');
             }
             catch (CryptographicException)
             {
