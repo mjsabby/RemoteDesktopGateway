@@ -43,8 +43,8 @@ namespace RemoteDesktopGateway
             {
                 while (!ctrlc.IsCancellationRequested)
                 {
-                    await timer.WaitForNextTickAsync().ConfigureAwait(false);
                     (timer.Period, authConfig.PublicKeys) = await GetGoogleOAuthPublicKeys(authConfig.PublicKeysUrl).ConfigureAwait(false);
+                    await timer.WaitForNextTickAsync(ctrlc.Token).ConfigureAwait(false);
                 }
             });
 
@@ -324,23 +324,21 @@ namespace RemoteDesktopGateway
             using var requestBody = new FormUrlEncodedContent(
             [
                 new KeyValuePair<string, string>("client_id", clientId),
-                    new KeyValuePair<string, string>("client_secret", clientSecret),
-                    new KeyValuePair<string, string>("refresh_token", refreshToken),
-                    new KeyValuePair<string, string>("grant_type", "refresh_token")
+                new KeyValuePair<string, string>("client_secret", clientSecret),
+                new KeyValuePair<string, string>("refresh_token", refreshToken),
+                new KeyValuePair<string, string>("grant_type", "refresh_token")
             ]);
 
             var response = await httpClient.PostAsync(new Uri(tokenUrl), requestBody).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             string idToken = null;
-            using (var doc = JsonDocument.Parse(responseContent))
+            using var doc = JsonDocument.Parse(responseContent);
+            foreach (var e in doc.RootElement.EnumerateObject())
             {
-                foreach (var e in doc.RootElement.EnumerateObject())
+                if (e.NameEquals("id_token"))
                 {
-                    if (e.NameEquals("id_token"))
-                    {
-                        idToken = e.Value.GetString();
-                    }
+                    idToken = e.Value.GetString();
                 }
             }
 
@@ -365,19 +363,17 @@ namespace RemoteDesktopGateway
 
             string refreshToken = null;
             string idToken = null;
-            using (var doc = JsonDocument.Parse(responseContent))
+            using var doc = JsonDocument.Parse(responseContent);
+            foreach (var e in doc.RootElement.EnumerateObject())
             {
-                foreach (var e in doc.RootElement.EnumerateObject())
+                if (e.NameEquals("refresh_token"))
                 {
-                    if (e.NameEquals("refresh_token"))
-                    {
-                        refreshToken = e.Value.GetString();
-                    }
+                    refreshToken = e.Value.GetString();
+                }
 
-                    if (e.NameEquals("id_token"))
-                    {
-                        idToken = e.Value.GetString();
-                    }
+                if (e.NameEquals("id_token"))
+                {
+                    idToken = e.Value.GetString();
                 }
             }
 
@@ -449,11 +445,6 @@ namespace RemoteDesktopGateway
             }
 
             if (!string.Equals(payload.GetProperty("aud").GetString(), aud, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            if (!payload.GetProperty("email_verified").GetBoolean())
             {
                 return false;
             }
@@ -593,6 +584,7 @@ namespace RemoteDesktopGateway
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task HandleRemoteDesktopGateway(HttpContext context, Func<string, (bool, HashSet<string>)> func, CancellationToken cancellationToken)
         {
             var request = context.Request;
@@ -635,6 +627,7 @@ namespace RemoteDesktopGateway
 
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task HandleIndex(HttpContext context, RDPGatewayConfig config, GoogleOAuthConfig authConfig, byte[] key, ECDsa ecdsa, CancellationToken cancellationToken)
         {
             var response = context.Response;
@@ -664,6 +657,7 @@ namespace RemoteDesktopGateway
             await response.WriteAsync("</ul><a href='/logout'>Logout</a></body></html>", cancellationToken).ConfigureAwait(false);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task HandleGenRDP(HttpContext context, RDPGatewayConfig config, GoogleOAuthConfig authConfig, byte[] key, ECDsa ecdsa, CancellationToken cancellationToken)
         {
             var response = context.Response;
@@ -700,6 +694,7 @@ namespace RemoteDesktopGateway
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(content), cancellationToken).ConfigureAwait(false);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task HandleLogin(HttpContext context, RDPGatewayConfig serverConfig, GoogleOAuthConfig authConfig, byte[] key, ECDsa signingKey, string x, string y, CancellationToken cancellationToken)
         {
             var response = context.Response;
@@ -747,6 +742,7 @@ namespace RemoteDesktopGateway
             await response.WriteAsync("<!DOCTYPE html><html lang='en'><head><title>.</title><meta http-equiv='refresh' content='0; url=/'></head>Redirecting to /</body></html>", cancellationToken).ConfigureAwait(false);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static async Task HandleLogout(HttpContext context, CancellationToken cancellationToken)
         {
             var response = context.Response;

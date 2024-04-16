@@ -49,7 +49,7 @@ dotnet_diagnostic.IDE0300.severity = error
 dotnet_diagnostic.IDE0040.severity = error
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
-csharp_prefer_simple_using_statement = true:suggestion
+csharp_prefer_simple_using_statement = true:error
 csharp_prefer_braces = true:silent
 csharp_style_namespace_declarations = block_scoped:silent
 csharp_style_prefer_method_group_conversion = true:silent
@@ -137,6 +137,9 @@ dotnet_diagnostic.CA1867.severity = error
 dotnet_diagnostic.CA1870.severity = error
 dotnet_diagnostic.CA2014.severity = error
 dotnet_diagnostic.CA2020.severity = error
+
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = error
 
 [*.{cs,vb}]
 #### Naming styles ####
@@ -282,7 +285,7 @@ dotnet_style_qualification_for_field = false:silent
 dotnet_diagnostic.CA1501.severity = error
 dotnet_diagnostic.CA1502.severity = error
 dotnet_diagnostic.CA1505.severity = error
-dotnet_diagnostic.CA1506.severity = none
+dotnet_diagnostic.CA1506.severity = error
 dotnet_diagnostic.CA1509.severity = error
 dotnet_diagnostic.CA1510.severity = error
 dotnet_diagnostic.CA1511.severity = error
